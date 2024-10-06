@@ -1,0 +1,54 @@
+services:
+  # Serviço do Backend (NestJS)
+  app:
+    container_name: nest-app
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+      - ./upload_content:/app/temp
+    entrypoint: sh -c "npm run start:prod"
+    networks:
+      - app-network
+
+  # Serviço do Banco de Dados (PostgreSQL)
+  postgres:
+    container_name: postgres-db
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=digitalplayer
+    ports:
+      - "5432:5432"
+    volumes:
+      - digitalplayer_pg_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # Serviço do Frontend (React)
+  frontend:
+    container_name: react-frontend
+    build:
+      context: ./backoffice
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    restart: always
+    networks:
+      - app-network
+
+volumes:
+  digitalplayer_pg_data:
+
+
+networks:
+  app-network:
+    driver: bridge
